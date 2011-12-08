@@ -1,0 +1,6 @@
+My presentation on web app crypto from HackPra
+
+HTML5 slides covering md5 length extension, padding oracles, BEAST and an attack on XML encryption.
+
+The padding oracle and BEAST slides have javascript animations (though they don't use real crypto, because
+the crypto function is irrelevant. It's really CBC that is the problem.
