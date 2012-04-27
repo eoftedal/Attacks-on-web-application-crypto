@@ -1,0 +1,916 @@
+ï»¿<!DOCTYPE html>
+
+<!--
+  Google HTML5 slide template
+
+  Authors: Luke Mahé (code)
+           Marcin Wichary (code and design)
+
+           Dominic Mazzoni (browser compatibility)
+           Charles Chen (ChromeVox support)
+
+  URL: http://code.google.com/p/html5slides/
+-->
+
+<html>
+  <head>
+    <title>Presentation</title>
+
+    <meta charset='utf-8'>
+    <script src='slides.js'></script>
+	<script src='jquery-1.7.1.min.js'></script>
+    <style>
+
+      a {
+        text-decoration: none;
+      }
+
+      .slides.template-bekk > article:not(.nobackground):not(.biglogo) {
+        background: url(images/bekk-logo-small.png) 710px 625px no-repeat;
+        background-color: white;
+      }
+
+      q.small {
+        font-size: 1.1em;
+      }
+	  q.smaller {
+		font-size: 1em;
+		line-height: 1em;
+	  }
+	  .green li {
+		color: #0a0;
+	  }
+	  .yellow li {
+		color: #dd0;
+	  }
+	  .red li {
+		color: #a00;
+	  }
+	 .cbc {
+		width: 80%;
+		margin: 100px auto;
+	 }
+	 ol {
+		list-style: none;
+	 }
+	.cbc td {
+		text-align: center;
+		border-color: #444444;
+		font-size: 80%;
+		padding: 1px;
+		width: 12.5%;
+		font-family: monospace;
+		vertical-align: middle;
+	}
+	.cbc tr.arrow td, .cbc tr.xor td{
+		border: none;
+	}
+	.cbc .decrypt td {
+		background: #444444;
+		color: #fff
+	}
+	#padding td {
+		font-weight: bold;
+	}
+	#padding td.pad {
+		font-style: italic;
+		font-weight: normal;
+	}
+	#result {
+		margin: 70px auto;
+	}
+	.cbc th {
+		font-weight: normal;
+		border: none;
+		font-family: 'Open Sans', Arial, sans-serif !important;
+		min-width: 120px !important;
+		overflow: hidden;
+		vertical-align: middle;
+	}
+	.communication {
+		margin-top: 20px;
+	}
+	.communication pre {
+		margin-top: 4px;
+	}
+	.communication .server {
+		text-align: right;
+	}
+	.communication .server pre {
+		text-align: left;
+	}
+	.clickable {
+		border: 1px solid #008A35;
+		color: #008A35;
+		cursor: pointer;
+	}
+	.found {
+		color: #008A35;
+	}
+	.md5 {
+		width: 100%;
+		margin-top: 10px;
+	}
+	.md5 td {
+		font-size: 90%;
+		min-width: 30px;
+		padding: 4px;
+		width: 30px;
+	}
+	pre.inbetween  {
+		margin: 10px 0px 10px 0px;
+	}
+	
+	
+    </style>
+	<script>
+	function drawCBC(container, cipher, intermediate, iv, plain) {
+		$(function() {
+			var table = $("<table>").appendTo(container).addClass("cbc");
+			buildRow(cipher).appendTo(table).addClass("cipher");
+			buildRow(makeBlock("&darr;")).appendTo(table).addClass("arrow");
+			var tr = $("<tr>").appendTo(table).addClass("decrypt");
+			$("<td>").attr("colspan", 8).appendTo(tr).text("Decrypt");
+			buildRow(makeBlock("&darr;")).appendTo(table).addClass("arrow");
+			buildRow(intermediate).appendTo(table).addClass("intermediate");
+			buildRow(makeBlock("&oplus;")).appendTo(table).addClass("xor");
+			buildRow(iv).appendTo(table).addClass("iv");
+			buildRow(makeBlock("&darr;")).appendTo(table).addClass("arrow");
+			buildRow(plain).appendTo(table).addClass("plain");
+			});
+	}
+	function makeBlock(val) {
+		var a = new Array();
+		for (var i = 0; i < 8; i++) {
+			a.push(val);
+		}
+		return a;
+	}
+	function makeLetterSubBlock(letter) {
+		var a = new Array();
+		for (var i = 0; i < 8; i++) {
+			a.push(letter + "<sub>" + i + "</sub>");
+		}
+		return a;	
+	}
+	function buildRow(data) {
+		var tr = $("<tr>");
+		$(data).each(function(i,d) {
+			$("<td>").html(d).appendTo(tr);
+		});
+		return tr;
+	}
+	function buildHexRow(data) {
+		var tr = $("<tr>");
+		$(data).each(function(i,d) {
+			$("<td>").html(toHex(d)).appendTo(tr);
+		});
+		return tr;
+	}
+	function toHex(i) {
+		return (i < 16 ? "0x0" : "0x") + i.toString(16);
+	}
+	$(function() {
+		var table = $("#padding");
+		for (var i = 1; i <= 8; i++) {
+			var tr = buildRow(makeLetterSubBlock("p")).appendTo(table);
+			for (var j = 1; j <= i; j++) {
+				$(tr.children("td").get(8 - j)).text(toHex(i)).addClass("pad");
+			}
+		}
+	});
+	function addHeader(row, header) {
+		$("<th>").html(header).prependTo(row);
+	}
+	$(function() {
+		$(".source").each(function(i, e) {
+			var link = $(e).text();
+			$(e).html("").append($("<a>").text(link).attr("href", link));
+		});
+	});
+	
+	</script>
+  </head>
+
+  <body style='display: none'>
+
+    <section class='slides layout-regular template-bekk'>
+
+      <article>
+        <h1>
+          Practical attacks on web crypto
+        </h1>
+        <p>
+          Erlend Oftedal
+          &mdash;
+          <a href="http://twitter.com/webtonull">@webtonull</a>
+          <br>
+          Bekk Consulting
+          <br>
+          7. December 2011
+        </p>
+      </article>
+
+	  <article>
+		<table style="text-align: center; margin: 0px auto; width: 90%;">
+			<tr class="build">
+				<td style="height: 600px; background: url(images/sykkel-laas.png) top left no-repeat"></td>
+				<td style="height: 600px; background: url(images/sykkel-laas.png) top right no-repeat"></td>
+			</tr>
+		</table>  
+	  </article>
+	  
+	  <article>
+		<h3>Who am I?</h3>
+		<img src="images/erlend.jpg" style="position: absolute; bottom: 2.5em; right: 1em; " />
+		<ul class="build">
+			<li>Work as a developer</li>
+			<li>Leader of Security Competency group at <a href="http://www.bekk.no">BEKK</a></li>
+			<li><a href="https://www.owasp.org/index.php/Norway">OWASP Norway Chapter</a> lead</li>
+			<li>Member of <a href="http://www.honeynor.no/">Norwegian Honeynet Project</a></li>
+			<li>Above average interest in security</li>
+		</ul>
+	  </article>
+
+	  <article>
+		<h3>Agenda</h3>
+		<ul class="build">
+			<li>Hashing</li>
+			<li>Attacks on hashes</li>
+			<li>Attacks on encrypted values</li>
+		</ul>
+	  </article>
+	  
+      <article>
+        <q class="question">
+          What's the best way to anger a security guy?
+        </q>
+		<br>
+		<div class="build">
+			<span>Say something like: "We encrypt our passwords with MD5"</span>
+		</div>
+      </article>
+
+	  <article>
+		<h3>Hash functions</h3>
+		<ul class="build">
+			<li>Maps a large dataset to a smaller data set</li>
+			<li>Low cost</li>
+			<li>Deterministic</li>
+			<li>Uniform</li>
+		</ul>
+        <div class='source'>
+          http://en.wikipedia.org/wiki/Hash_function
+        </div>
+	  </article>
+
+	  <article>
+		<h3>Cryptographic hash functions</h3>
+		<ul class="build">
+			<li>Easy to compute for any given message</li>
+			<li>Infeasable to generate a message for a given hash</li>
+			<li>Infeasable to modify a message without changing the hash</li>
+			<li>Infeasable to find two different messages with the same hash</li>
+		</ul>
+        <div class='source'>
+          http://en.wikipedia.org/wiki/Cryptographic_hash_function
+        </div>
+	  </article> 
+	  
+	  <article>
+		<h3>Hashing passwords</h3>
+		<ul class="build green">
+			<li>Infeasable to generate a message for a given hash</li>
+			<li>Infeasable to modify a message without changing the hash</li>
+			<li>Infeasable to find two different messages with the same hash</li>
+		</ul>
+		<ul class="build yellow">
+			<li>Deterministic</li>
+			<li>Low cost</li>
+		</ul>
+	  </article>
+
+	  <article>
+		<q class="question">Given a password hash, what is the easiest way to find the password?</q>
+		<br>
+		<h3>d8b36fa2ce602b7258ecaa289cf70aa1</h3>
+	  </article>
+	  
+	  <article>
+		<div class="build" style="text-align: center">
+			<img src="images/google.png" style="margin: 0px -60px 0px -60px" />
+		</div>  
+	  </article>
+
+	  <article>
+		<h3>Someone actually built a tool</h3>
+		<div class="build" style="text-align: center">
+			<img src="images/bozocrack.png" style="margin: 100px auto" />
+		</div>  
+        <div class='source'>
+		https://github.com/juuso/BozoCrack
+        </div>	  
+	  </article>
+	  	  
+	  <article>
+		<h3>How to avoid these pitfalls</h3>
+		<ul>
+			<li>Use a cryptographically strong random salt unique for each user</a>
+			<li>Hash the password together with the salt</li>
+			<li>Run the hash function 1000 times</li>
+			<li style="margin-top: 2em">Consider using <a href="http://www.tarsnap.com/scrypt.html">scrypt</a> or <a href="http://en.wikipedia.org/wiki/Bcrypt">bcrypt</a> instead</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Signing data with hashes</h3>
+		<div class="build communication">
+			<div>Client:<pre>GET /</pre></div>
+			<div class="server">Server:
+				<pre>200 OK
+... &lt;a href="/resource/?a=123&b=46&signature=LQWJDQOC21ASDiojoQ2e13lkajsd="&gt;&lt;/a&gt; ...</pre>
+			</div>
+			<div>Client:<pre>GET /resource/?a=123&b=46&signature=LQWJDQOC21ASDiojoQ2e13lkajsd=</pre></div>
+			<div class="server">Server:
+				<pre>200 OK
+Data authorized by signature...</pre>
+			</div>
+		</div>
+	  </article>
+	  
+	  <article>
+		<h3>Signing data with hashes</h3>
+		<ul class="build">
+			<li>Naive approach:
+				<pre>Signature = md5(secret + data_to_sign)</pre>
+			</li>
+			<li>
+				MD5 is just an example. This next attack works on for instance SHA1 as well
+			</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Block based hash algorithms (MD)</h3>
+		<ol class="build">
+			<li>Starts with a constant value S</li>
+			<li>First block of data D<sup>0</sup>:
+				<pre class="inbetween">H<sup>0</sup> = MD5_round(s, D<sup>0</sup>)</li>
+			<li>Consecutive blocks D<sup>n</sup>:
+				<pre class="inbetween">H<sup>n</sup> = MD5_round(H<sup>n-1</sup>, D<sup>n</sup>)</li>
+			<li>The last block is padded with a 1, some 0s and the length of the original string</li>
+		</ol>
+	  </article>
+	  <article>
+		<h3>Attacking the signature</h3>
+		<ul class="build">
+			<li>Consider the following layout:
+				<pre class="inbetween">MD5(secret + data) = h(secret + data + padding)</pre>
+			</li>
+			<li>
+				What if we wanted to hash data that was by coincedence (or not) equal to this:
+				<pre class="inbetween">secret + data + padding + some other data</pre>
+			</li>
+			<li>
+				The layout would become
+				<pre class="inbetween">MD5(...) = h(secret + data + padding + some other data + padding)</pre>
+			</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Attacking the signature</h3>
+		<ul class="build">
+			<li>So if we have the output of:
+				<pre class="inbetween">H<sup>x</sup> = MD5(secret + data)</pre>
+			</li>
+			<li>
+				We can use H<sup>x</sup> as the starting value S in order to calculate:
+				<pre class="inbetween">MD5(secret + data + padding + new data)</pre></li>
+			<li>by running for the new data (D<sup>'0</sup>-D<sup>'n</sup>):
+				<pre class="inbetween">H<sup>0</sup> = MD5_round(H<sup>x</sup>, D<sup>'0</sup>)</pre>
+			</li>
+			<li>
+				We have to make sure the padding gets the correct length
+			</li>
+			<li>
+				This is called a length extension attack
+			</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Any real-life examples?</h3>
+		<ul class="build">
+			<li>Thai Duong and Juliano Rizzo disovered a flaw like this in <a href="http://netifera.com/research/flickr_api_signature_forgery.pdf">Flickr's API Signature</a>
+			</li>
+			<li>Flickr's API signatures worked like this
+				<ol>
+					<li>Sort your URL parameters list into alphabetical order based on the parameter name:<br>
+						<pre class="inbetween">bar=2&baz=3&foo=1</pre></li>
+					<li>Concatenate the shared secret and parameter name-value pairs:<br>
+						<pre class="inbetween">SECRETbar2baz3foo1</pre></li>
+					<li>Calculate the md5() hash of this string and append to the list of parameters
+					<pre class="inbetween">bar=2&baz=3&foo=1&signature=afb12318a0b9823bcd</pre></li>
+				</ol>
+			</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Attack on the Flickr API</h3>
+		<ul class="build">
+			<li>The signature could not separate between:<br>
+				<pre class="inbetween">bar=2&baz=3&foo=1</pre>
+				and
+				<pre class="inbetween">b=ar2baz3foo1</pre></li>
+			<li>This allowed an attacker to build a new signed URI with arguments:
+				<pre class="inbetween">b=ar2baz3foo10000020&bar=6&baz=5&foo=4</pre>
+				and then length extend the signature to include the new parameters
+			</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Avoiding attacks on hash-based signatures</h3>
+		<ul class="build">
+			<li>Don't reinvent the wheel - use HMAC</li>
+		</ul>
+	  </article>
+	  
+	  
+	  <article>
+		<h3>Padding oracles</h3>
+		<ul class="build">
+			<li>First introduced in <a href="http://www.iacr.org/archive/eurocrypt2002/23320530/cbc02_e02d.pdf">Security Flaws Induced by CBC Padding
+	Applications to SSL, IPSEC, WTLS...</a> by Serge Vaudenay in 2002</li>
+			<li>In 2010 ASP.NET, Ruby on Rails and Apache Myfaces was <a href="http://netifera.com/research/poet/PaddingOracleBHEU10.pdf">found to be vulnerable</a> by Juliano Rizzo and Thai Duong</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Padding oracles</h3>
+		<div class="build communication">
+			<div>Client:<pre>GET /</pre></div>
+			<div class="server">Server:
+				<pre>200 OK
+... &lt;a href="/resource/LQWJDQOC21ASDiojoQ2e13lkajsd="&gt;&lt;/a&gt; ...</pre>
+			</div>
+			<div>Client:<pre>GET /resource/LQWJDQOC21ASDiojoQ2e13lkajsd=</pre></div>
+			<div class="server">Server:
+				<pre>200 OK
+Secret data....</pre>
+			</div>
+		</div>
+	  </article>
+
+	  <article>
+		<h3>Padding oracles</h3>
+		<ul>
+			<li>Reponses from server:
+				<ul class="build">
+					<li><strong>200 Ok</strong> - All ok </li>
+					<li><strong>404 Not found/invalid</strong> - The value was decrypted ok, but the server could not process the result</li>
+					<li><strong>500 Invalid padding</strong> - The server could not decrypt the value</li>
+				</ul>
+			</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>XOR</h3>
+		<ul class="build">
+			<li> A &oplus; A = 0</li>
+			<li> A &oplus; 0 = A</li>
+			<li> A &oplus; 1 = !A</li>
+			<li style="margin-top: 2em">From this we can build more complex rules</li>
+			<li> A &oplus; B &oplus; B = A</li>
+			<li> A &oplus; B &oplus; B &oplus; A = 0</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>CBC based encryption</h3>
+		<div class="build" style="text-align: center">
+			<img src="images/encrypt.png" style="margin: 100px -60px 0px -60px" />
+		</div>  
+	  </article>
+	  
+	  <article>
+		<h3>CBC based decryption</h3>
+		<div class="build" style="text-align: center">
+			<img src="images/decrypt.png" style="margin: 100px -60px 0px -60px" />
+		</div>  
+	  </article>
+	  
+  	  <article>
+		<h3>PKCS#5/7 padding</h3>
+		<table id="padding" class="cbc">
+		</table>
+		<script>
+
+		</script>
+	  </article>
+	  
+	  <article>
+		<h3>Padding oracles</h3>
+		<div id="c1" />
+		<script>drawCBC($("#c1"), makeLetterSubBlock("c"), makeBlock("?"), makeLetterSubBlock("iv"), makeBlock("?"))</script>
+	  </article>
+	  
+	  <article>
+		<h3>Attacking the oracle</h3>
+		<ol class="build">
+		<li>The attacker wants to decrypt a secret value
+			<pre>GET /resource/&lt;IV&gt;&lt;C<sup>0</sup>&gt;&lt;C<sup>1</sup>&gt;&lt;C<sup>2</sup>&gt;</pre>
+		<li>The attacker creates a random block <em>R</em></li>
+		<li>And sends it to the server together with a cipher text block:
+			<pre>GET /resource/&lt;R&gt;&lt;C<sup>0</sup>&gt;</pre>
+		</li>
+		<li>This will probably result in a padding error</li>
+		</ol>
+	  </article>
+	  
+	  <article>
+		<h3>Padding oracles</h3>
+		<div id="c2" />
+		<script>
+			var rB =  [0xa9, 0x57, 0x34, 0x78, 0x12, 0xff, 0x75, 0x8f];
+			var dec = [0xfe, 0xbd, 0x75, 0x46, 0x36, 0x32, 0x27, 0x41];
+			drawCBC($("#c2"), makeLetterSubBlock("c"), makeBlock("?"), makeLetterSubBlock("R"), makeBlock("?"))
+			$(function() {
+				$("#c2 .iv td").last().addClass("clickable").one("click", function() {
+					var r = rB[7];
+					var val = dec[7];
+					decrypt();
+					function decrypt() {
+						$("#c2 .iv td").last().text(toHex(r));
+						if ((val ^ r) == 1) {
+							$("#c2 .plain td").last().text("0x01");
+							$("#c2 .intermediate td").last().text(toHex(val));
+						} else {
+							r = (r + 1) % 256;
+							setTimeout(decrypt, 100);
+						}
+					}	
+				});
+			});
+			
+		</script>
+	  </article>
+	  
+	  <article>
+		<h3>Attacking the oracle</h3>
+		<ol class="build">
+		<li>To decrypt the byte next to the last, the attacker needs to find a valid padding of 2</li>
+		<li>The attacker sets the last byte of R to:
+			<pre>R<sub>7</sub> = R<sub>7</sub> &oplus; 0x01 &oplus; 0x02</pre>
+			</li>
+		<li>He then does the same trick for the second to last byte</li>
+		</ol>
+	  </article>
+	  	  
+	  <article>
+		<h3>Padding oracles</h3>
+		<div id="c3" />
+		<script>
+			drawCBC($("#c3"), makeLetterSubBlock("c"), makeBlock("?"), makeLetterSubBlock("R"), makeBlock("?"))
+			$(function() {
+				$("#c3 .plain td").last().text("0x01")
+				$("#c3 .iv td").last().text("0x40")
+				$("#c3 .intermediate td").last().text("0x41");
+				$("#c3 .iv td").last().addClass("clickable").one("click", function() {
+					$("#c3 .plain td").last().text("0x02");
+					$("#c3 .iv td").last().text("0x43");
+					$("#c3 .iv td").eq(6).addClass("clickable").one("click", function() {
+						decryptValue(6, 50, goOn);
+
+					});
+				});
+				function decryptValue(index, speed, callback) {
+					var r = rB[index];
+					var val = dec[index];
+					for (var i = 7; i > index; i--) {
+						$("#c3 .plain td").eq(i).text(toHex(8 - index));
+						$("#c3 .iv td").eq(i).text(toHex(dec[i] ^ (8 - index)));
+					}
+					decrypt(r, val, index, speed, callback);
+				}
+
+				function decrypt(r, val, index, speed, callback) {
+					$("#c3 .iv td").eq(index).text(toHex(r));
+					if ((val ^ r) == 8 - index) {
+						$("#c3 .plain td").eq(index).text(toHex(8 - index));
+						$("#c3 .intermediate td").eq(index).text(toHex(val));
+						callback();
+					} else {
+						r = (r + 1) % 256;
+						setTimeout(function() { decrypt(r, val, index, speed, callback)}, speed);
+					}
+				}	
+				function goOn() {
+					$("#c3 .iv td").eq(5).addClass("clickable").one("click", function() {
+						var speed = 20;
+						decryptValue(5, speed, function() { 
+							decryptValue(4, speed, function() {
+								decryptValue(3, speed, function() {
+									decryptValue(2, speed, function() {
+										decryptValue(1, speed, function() {
+											decryptValue(0, speed, function() {
+											});
+										});
+									});
+								});
+							});	
+						});
+					});
+				}
+			});
+			
+		</script>
+	  </article>
+	  
+	  <article>
+		<h3>Attacking the oracle</h3>
+		<ol class="build">
+		<li>Now the attacker has the full output from the decrypt function</li>
+		<li>To get the plain text, the attacker can simply:
+			<pre>P<sup>n</sup> = R<sup>n</sup> &oplus; 0x08 &oplus; IV<sup>n</sup></pre>
+			</li>
+		<li>The process is then repeated for each block C<sup>n</sup>, but in this last step instead of IV, C<sup>n-1</sup> is used</li>
+		</ol>
+	  </article>
+	  
+	  <article>
+		<h3>Example</h3>
+		<table id="result" class="cbc">
+		</table>
+		<script>
+			$(function() {
+				var table = $("#result");
+				buildRow(makeLetterSubBlock("P")).appendTo(table);
+				buildRow(makeBlock("=")).appendTo(table).addClass("xor");
+				var tr = buildRow(makeBlock("")).appendTo(table);
+				for (var i = 0; i < 8; i++) {
+					tr.children("td").eq(i).text(toHex(dec[i] ^ 8));
+				}
+				buildRow(makeBlock("&oplus;")).appendTo(table).addClass("xor");
+				buildRow(makeBlock(toHex(8))).appendTo(table);
+				buildRow(makeBlock("&oplus;")).appendTo(table).addClass("xor");
+				var tr = buildRow(makeBlock("")).appendTo(table);
+				var text = "HackPra!";
+				for (var i = 0; i < 8; i++) {
+					tr.children("td").eq(i).text(toHex(text.charCodeAt(i) ^ dec[i]));
+				}
+				buildRow(makeBlock("=")).appendTo(table).addClass("xor");
+				var tr = buildRow(makeBlock("")).appendTo(table);
+				for (var i = 0; i < 8; i++) {
+					tr.children("td").eq(i).text(toHex(text.charCodeAt(i)));
+				}
+				buildRow(makeBlock("&darr;")).appendTo(table).addClass("arrow");
+				buildRow(["H","a","c","k", "P","r","a","!"]).appendTo(table);
+			});
+		</script>
+	  </article>
+	  
+	  <article>
+		<h3>Padding Oracle Attacks</h3>
+		<ul class="build">
+		<li>Between 1 and 256 requests per byte of recovered plain text (mean = 128)</li>
+		<li>The process can be reversed in order to encrypt data, but this requires a lot more requests</li>
+		<li><a href="http://erlend.oftedal.no/blog/poet/">http://erlend.oftedal.no/blog/poet/</a></li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>Defense against Padding Oracle Attacks</h3>
+		<ul class="build">
+		<li>Have only two results - <strong>Ok</strong> and <strong>Not found</strong></li>
+		<li>What's wrong with this code?
+<pre>try {
+	value = decrypt(inputValue);
+	if (db.querySecretElement(value) != null) {
+		return OK;
+	} else {
+		return NOT_FOUND;
+	}
+} catch(PaddingException ex) {
+	return NOT_FOUND;
+}</pre>
+		</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>BEAST</h3>
+		<ul class="build">
+			<li>Yet another attack discovered by Juliano Rizzo and Thai Duong</li>
+			<li>Published at ekoparty 2011</li>
+			<li>An attack on SSL 3.0 and TLS 1.0</li>
+		</ul>
+	  </article>
+	  
+	  <article>
+		<h3>The keys to this attack</h3>
+		<ul class="build">
+			<li>If two equal blocks P<sup>n</sup> and P<sup>m</sup> are encrypted using the same
+			key and same IV, the resulting cipher text is the same.</li>
+			<li>If the IV is different we can still get the same cipher text by altering the plain text 
+				<pre>P<sup>m*</sup> = P<sup>m</sup> &oplus; IV<sup>n</sup> &oplus; IV<sup>m</sup></pre>
+			</li>
+			<li>What is sent to the encryption algorithm thus becomes:
+				<pre>P<sup>m*</sup> &oplus; IV<sup>m</sup>  =  P<sup>m</sup> &oplus; IV<sup>n</sup> &oplus; IV<sup>m</sup> &oplus; IV<sup>m</sup>  =  P<sup>m</sup> &oplus; IV<sup>n</sup></pre>
+			</li>
+		</ul>
+	</article>
+	
+	 <article>
+		<h3>Why does this matter?</h3>
+		<ul class="build">
+			<li><img src="images/beast.png"></li>
+			<li>The communication is layed out like this:
+			<pre>[A = attacker controlled data][S = secret data]</pre></li>
+		</ul>
+	 </article>
+	 <article>
+		<h3>The chosen boundary attack (cont.)</h3>
+		<ul class="build">
+			<li>Simplified - If A has the length of a block minus one, the last byte of the first block will be the first byte of the secret data
+				<table id="beast1" class="cbc" style="margin: 10px auto;">
+				</table>
+			</li>
+			<li>
+				The layout of the SSL traffic is thus:
+				<pre>[IV][C<sup>0</sup>=E(A + S<sub>0</sub>)][C<sup>1</sup>=E(S<sub>1</sub>-S<sub>8</sub>)][...]</pre>
+			</li>
+			<li>The attacker now knows the IV and C<sup>0</sup></li>
+			<script>
+				$(function() {
+					var table = $("#beast1");
+					var tr = buildRow(makeLetterSubBlock("A")).appendTo(table);
+					tr.children("td").last().html("S<sub>0</sub>");
+				});
+			</script>
+		</ul>
+	 </article>
+	 <article>
+		<h3>The chosen boundary attack (cont.)</h3>
+		<ul class="build">
+			<li>If the connection is kept open and the attacker can send more data, the attacker knows the IV<sup>n</sup> (=C<sup>n-1</sup>) of the next block <em>n</em> to be encrypted</li>
+			<li>This allows the attacker to find S<sub>0</sub>, by sending for i = 0 to 255:
+				<pre>P<sup>n+i</sup> = [A + i] &oplus; IV &oplus; C<sup>n+i-1</sup></pre>
+			</li>
+			<li>If any C<sup>n+i</sup> = C<sup>0</sup>, the value of S<sub>0</sub> has been found, and the attacker can stop</li>
+		</ul>
+	 </article>
+	 <article>
+		<h3>The chosen boundary attack - Example</h3>
+		<table id="beast-c0" class="cbc" style="margin: 40px auto;"></table>
+		<script>
+			var beast_c0 = [0x74, 0x98, 0xe4, 0x86, 0xa6, 0x3a, 0x45, 0x88];
+			var beast_iv = [0x34, 0x83, 0xbf, 0x82, 0x85, 0x87, 0x27, 0x05];
+			var beast_key = [0x21, 0x7a, 0x3a, 0x65, 0x42, 0xdc, 0x3, 0xc5];
+			var beast_secret = "HackPra!";
+			$(function() {
+				var table = $("#beast-c0");
+				var tra = buildRow(makeBlock("a")).appendTo(table);
+				tra.children("td").last().text("?");
+				addHeader(tra, "A= ");
+				var trah = buildHexRow(makeBlock(0x61)).appendTo(table);
+				trah.children("td").last().text("?");
+				addHeader(trah, "A(hex)= ");
+				var triv = buildHexRow(beast_iv).appendTo(table);
+				addHeader(triv, "IV= ");
+				var trc = buildHexRow(beast_c0).appendTo(table);
+				addHeader(trc, "C<sup>0</sup>= ");
+			});
+		</script>
+		<table id="beast-guess" class="cbc" style="margin: 40px auto;"></table>
+		<script>
+			var beast_ivn = [0x87, 0x72, 0x22, 0x34, 0x74, 0x18, 0x0f, 0x64];
+			var beast_pn = makeBlock(0x61);
+			$(function() {
+				var table = $("#beast-guess");
+				var tra = buildRow(makeBlock("a")).appendTo(table);
+				tra.children("td").last().text("?");
+				addHeader(tra, "");
+				var trap = buildRow(makeBlock("a")).appendTo(table);
+				trap.children("td").last().text("?");
+				addHeader(trap, "");
+				var trac = buildRow(makeBlock("a")).appendTo(table);
+				trac.children("td").last().text("?");
+				addHeader(trac, "");
+				var trac1 = buildRow(makeBlock("a")).appendTo(table);
+				trac1.children("td").last().text("?");
+				addHeader(trac1, "");
+				tryBlock(0, false);
+				tra.children("td").last().addClass("clickable").one("click", function() {
+					tryBlock(1, true);
+				});
+				function tryBlock(n, runAll) {
+					beast_pn[7] = n;
+					tra.children("th").html("A+" + n + "= ");
+					trap.children("th").html("P<sup>n+" + n + "</sup>= ");
+					trac.children("th").html("C<sup>n+" + n + "-1</sup>= ");
+					trac1.children("th").html("C<sup>n+" + n + "</sup>= ");
+					for (var i = 0; i < 8; i++) {
+						tra.children("td").eq(i).html(toHex(beast_pn[i]));
+						trac.children("td").eq(i).html(toHex(beast_ivn[i]));
+					}
+					var c = [];
+					var c2 = [];
+					var found = true;
+					for (var i = 0; i < 8; i++) { //fake encrypt
+						c[i] = Math.floor(Math.random()*256);
+						c2[i] = (beast_pn[i] ^ beast_iv[i] ^ beast_key[i]); 
+						if (beast_c0[i] != c2[i]) {
+							found = false;
+						}
+					}
+					for (var i = 0; i < 8; i++) {
+						trac1.children("td").eq(i).html(toHex(found ? c2[i] : c[i]));
+						trap.children("td").eq(i).html(toHex(beast_pn[i] ^ beast_iv[i] ^ beast_ivn[i]));
+					}
+					beast_ivn = c;
+					if (runAll && !found && n < 256) {
+						setTimeout(function() { tryBlock(n + 1, runAll) }, 100);
+					}
+					if (found) {
+						$("#beast-c0 tr").eq(0).children("td").last().addClass("found").text("H");
+						$("#beast-c0 tr").eq(1).children("td").last().addClass("found").text("0x48");
+						trac1.children("td").addClass("found");
+					}
+				}
+			});
+		</script>
+	 </article>
+	<article>
+		<h3>The chosen boundary attack</h3>
+		<ul class="build">
+			<li>Now the attacker knows the first letter of the secret</a>
+			<li>Next:<ul>
+				<li>Reduce size of A by 1 to bring in next byte from S</li>
+				<li>Create new connection and rerun algorithm untill the new byte is found</li>
+				<li>Repeat for entire secret</li>
+				</ul>
+			</li>
+			<li><a href="http://erlend.oftedal.no/blog/beast/">http://erlend.oftedal.no/blog/beast/</a></li>
+		</ul>
+	 </article>
+
+	 <article>
+		<h3>Defense against BEAST</h3>
+		<ul class="build">
+			<li>TLS 1.1+ injects an empty frame before every new message
+				<ul>
+					<li> =&gt; Makes the IV unpredictable</li>
+				</ul>
+			</li>
+
+			<li>Moving to non-CBC ciphers like RC4</li>			
+		</ul>
+	 </article>
+	
+	<article>
+		<q>BONUS MATERIAL</q>
+	 </article>
+	 
+	<article>
+		<h3><a href="http://www.nds.rub.de/media/nds/veroeffentlichungen/2011/10/22/HowToBreakXMLenc.pdf">Attacks on XML encryption</a></h3>
+		<ul class="build">
+			<li>By Tibor Jager and Juraj Somorovsky here at RUB</li>
+			<li>Is somewhat similar to padding oracles, but does not attack the padding</li>
+			<li>XML encryption is padded with random values + length</li>
+			<li>So what did they find?</li>
+		</ul>
+	 </article>
+	 
+	 <article>
+		<h3><a href="http://www.nds.rub.de/media/nds/veroeffentlichungen/2011/10/22/HowToBreakXMLenc.pdf">Attacks on XML encryption (cont.)</a></h3>
+		<ul class="build">
+			<li>Errors in XML-layout may be detectable in the response from the web service</li>
+			<li>By carefully manipulating the cipher text, we can disover when we break the XML layout</li>
+			<li>This tells us enough about the cipher text to recover it</li>
+		</ul>
+	 </article>
+
+	 <article>
+		<h3>Todays inspirational quote</h3>
+		<div class="build">
+			<q>What doesn't kill you makes you smaller</q>
+			<span style="float: right">Super Mario</span>
+		</div>
+		<div class="source">
+			http://twitter.com/#!/hubs/statuses/143803181145665536
+		</div>
+	  </article>
+	 
+	 <article style="position: relative">
+		<q class="question">Questions?</q>
+		<ul style="position: absolute; bottom: 100px; right: 60px;">
+			<li>Erlend Oftedal - <a href="http://www.twitter.com/webtonull">@webtonull</a></li>
+			<li>erlend@oftedal.no</li>
+		</ul>
+	 </article>
+  </body>
+</html>
